@@ -2,8 +2,7 @@ name: Threads Auto Post - ise_satoshi
 
 on:
   schedule:
-    - cron: '0 15 * * *'   # JST 0:00
-    - cron: '0 21 * * *'   # JST 6:00
+    - cron: '0 22 * * *'   # JST 7:00
     - cron: '0 23 * * *'   # JST 8:00
     - cron: '0 1 * * *'    # JST 10:00
     - cron: '0 3 * * *'    # JST 12:00
