@@ -1,0 +1,5 @@
+{
+  "max_posts_per_day": 10,
+  "min_post_interval_minutes": 50,
+  "max_error_count": 3
+}

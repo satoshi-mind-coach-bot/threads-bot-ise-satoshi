@@ -1,0 +1,49 @@
+name: Threads Auto Post - ise_satoshi
+
+on:
+  schedule:
+    - cron: '0 15 * * *'   # JST 0:00
+    - cron: '0 21 * * *'   # JST 6:00
+    - cron: '0 23 * * *'   # JST 8:00
+    - cron: '0 1 * * *'    # JST 10:00
+    - cron: '0 3 * * *'    # JST 12:00
+    - cron: '0 5 * * *'    # JST 14:00
+    - cron: '0 7 * * *'    # JST 16:00
+    - cron: '0 9 * * *'    # JST 18:00
+    - cron: '0 11 * * *'   # JST 20:00
+    - cron: '0 13 * * *'   # JST 22:00
+  workflow_dispatch:
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Refill queue if low
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python agents/writer.py
+
+      - name: Post to Threads
+        env:
+          THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
+          THREADS_USER_ID: ${{ secrets.THREADS_USER_ID }}
+        run: python agents/poster.py
+
+      - name: Save updated queue and history
+        run: |
+          git config user.email "bot@threads-bot"
+          git config user.name "ThreadsBot"
+          git add data/
+          git diff --staged --quiet || git commit -m "Update queue and history"
+          git push

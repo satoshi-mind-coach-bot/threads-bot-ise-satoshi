@@ -1,0 +1,5 @@
+config/credentials.env
+KILL_SWITCH
+data/error_count.txt
+__pycache__/
+*.pyc
