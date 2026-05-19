@@ -66,7 +66,9 @@ def check_interval(history, safety):
     if not last_time_str:
         return
     last_time = datetime.fromisoformat(last_time_str)
-    elapsed = (datetime.now() - last_time).total_seconds() / 60
+    if last_time.tzinfo is None:
+        last_time = last_time.replace(tzinfo=timezone.utc)
+    elapsed = (datetime.now(timezone.utc) - last_time).total_seconds() / 60
     min_interval = safety["min_post_interval_minutes"]
     if elapsed < min_interval:
         remaining = int(min_interval - elapsed)
@@ -144,7 +146,7 @@ def main():
         print(f"[OK] 投稿完了: {post_id}")
 
         post["post_id"] = post_id
-        post["posted_at"] = datetime.now().isoformat()
+        post["posted_at"] = datetime.now(timezone.utc).isoformat()
         history.append(post)
         save_json(history_path, history)
         save_json(queue_path, queue)
