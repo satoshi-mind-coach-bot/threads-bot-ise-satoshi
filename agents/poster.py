@@ -51,6 +51,15 @@ def check_kill_switch():
         sys.exit(0)
 
 
+def check_posting_hours(safety):
+    now_jst = datetime.now(JST)
+    start = safety.get("posting_hours_start", 0)
+    end = safety.get("posting_hours_end", 24)
+    if not (start <= now_jst.hour < end):
+        print(f"[STOP] 投稿時間外です（{now_jst.strftime('%H:%M')} JST）。{start}時〜{end}時のみ投稿します。")
+        sys.exit(0)
+
+
 def check_daily_limit(history, safety):
     today = datetime.now(JST).strftime("%Y-%m-%d")
     today_posts = [p for p in history if p.get("posted_at", "").startswith(today)]
@@ -116,9 +125,10 @@ def main():
     check_kill_switch()
 
     creds = load_credentials()
+    safety = load_safety()
+    check_posting_hours(safety)
     token = creds["THREADS_ACCESS_TOKEN"]
     user_id = creds["THREADS_USER_ID"]
-    safety = load_safety()
 
     queue_path = os.path.join(BOT_DIR, "data", "post_queue.json")
     history_path = os.path.join(BOT_DIR, "data", "post_history.json")

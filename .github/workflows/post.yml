@@ -3,15 +3,30 @@ name: Threads Auto Post - ise_satoshi
 on:
   schedule:
     - cron: '0 22 * * *'   # JST 7:00
-    - cron: '0 23 * * *'   # JST 8:00
+    - cron: '45 22 * * *'  # JST 7:45
+    - cron: '30 23 * * *'  # JST 8:30
+    - cron: '15 0 * * *'   # JST 9:15
     - cron: '0 1 * * *'    # JST 10:00
-    - cron: '0 3 * * *'    # JST 12:00
-    - cron: '0 5 * * *'    # JST 14:00
+    - cron: '45 1 * * *'   # JST 10:45
+    - cron: '30 2 * * *'   # JST 11:30
+    - cron: '15 3 * * *'   # JST 12:15
+    - cron: '0 4 * * *'    # JST 13:00
+    - cron: '45 4 * * *'   # JST 13:45
+    - cron: '30 5 * * *'   # JST 14:30
+    - cron: '15 6 * * *'   # JST 15:15
     - cron: '0 7 * * *'    # JST 16:00
-    - cron: '0 9 * * *'    # JST 18:00
-    - cron: '0 11 * * *'   # JST 20:00
-    - cron: '0 13 * * *'   # JST 22:00
+    - cron: '45 7 * * *'   # JST 16:45
+    - cron: '30 8 * * *'   # JST 17:30
+    - cron: '15 9 * * *'   # JST 18:15
+    - cron: '0 10 * * *'   # JST 19:00
+    - cron: '45 10 * * *'  # JST 19:45
+    - cron: '30 11 * * *'  # JST 20:30
+    - cron: '15 12 * * *'  # JST 21:15
   workflow_dispatch:
+
+concurrency:
+  group: threads-post
+  cancel-in-progress: false
 
 jobs:
   post:
