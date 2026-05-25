@@ -3,25 +3,15 @@ name: Threads Auto Post - ise_satoshi
 on:
   schedule:
     - cron: '0 22 * * *'   # JST 7:00
-    - cron: '45 22 * * *'  # JST 7:45
-    - cron: '30 23 * * *'  # JST 8:30
-    - cron: '15 0 * * *'   # JST 9:15
-    - cron: '0 1 * * *'    # JST 10:00
-    - cron: '45 1 * * *'   # JST 10:45
-    - cron: '30 2 * * *'   # JST 11:30
-    - cron: '15 3 * * *'   # JST 12:15
-    - cron: '0 4 * * *'    # JST 13:00
-    - cron: '45 4 * * *'   # JST 13:45
-    - cron: '30 5 * * *'   # JST 14:30
-    - cron: '15 6 * * *'   # JST 15:15
-    - cron: '0 7 * * *'    # JST 16:00
-    - cron: '45 7 * * *'   # JST 16:45
-    - cron: '30 8 * * *'   # JST 17:30
-    - cron: '15 9 * * *'   # JST 18:15
-    - cron: '0 10 * * *'   # JST 19:00
-    - cron: '45 10 * * *'  # JST 19:45
-    - cron: '30 11 * * *'  # JST 20:30
-    - cron: '15 12 * * *'  # JST 21:15
+    - cron: '40 23 * * *'  # JST 8:40
+    - cron: '20 1 * * *'   # JST 10:20
+    - cron: '0 3 * * *'    # JST 12:00
+    - cron: '40 4 * * *'   # JST 13:40
+    - cron: '20 6 * * *'   # JST 15:20
+    - cron: '0 8 * * *'    # JST 17:00
+    - cron: '40 9 * * *'   # JST 18:40
+    - cron: '20 11 * * *'  # JST 20:20
+    - cron: '0 13 * * *'   # JST 22:00
   workflow_dispatch:
 
 concurrency:
@@ -33,6 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: write
     steps:
       - uses: actions/checkout@v4
 
@@ -61,3 +52,8 @@ jobs:
           git add data/
           git diff --staged --quiet || git commit -m "Update queue and history"
           git push
+
+      - name: Re-enable schedule (self-heal)
+        run: gh workflow enable post.yml
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
