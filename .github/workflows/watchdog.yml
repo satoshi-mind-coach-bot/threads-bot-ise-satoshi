@@ -1,0 +1,65 @@
+name: Watchdog - Auto Recovery
+
+on:
+  schedule:
+    - cron: '30 1 * * *'   # JST 10:30
+    - cron: '30 4 * * *'   # JST 13:30
+    - cron: '30 7 * * *'   # JST 16:30
+    - cron: '30 10 * * *'  # JST 19:30
+  workflow_dispatch:
+
+jobs:
+  check-and-trigger:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check last post and trigger if stopped
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 << 'PYEOF'
+          import json, sys, subprocess
+          from datetime import datetime, timezone, timedelta
+
+          JST = timezone(timedelta(hours=9))
+          now_utc = datetime.now(timezone.utc)
+          now_jst = now_utc.astimezone(JST)
+
+          print(f"Watchdog check: {now_jst.strftime('%Y-%m-%d %H:%M')} JST")
+
+          if not (7 <= now_jst.hour < 22):
+              print(f"Outside posting hours. Skip.")
+              sys.exit(0)
+
+          with open('data/post_history.json', 'r', encoding='utf-8-sig') as f:
+              history = json.load(f)
+
+          if not history:
+              print("No history. Triggering.")
+              do_trigger = True
+          else:
+              last_str = history[-1].get('posted_at', '')
+              last_time = datetime.fromisoformat(last_str)
+              if last_time.tzinfo is None:
+                  last_time = last_time.replace(tzinfo=timezone.utc)
+              elapsed_min = (now_utc - last_time).total_seconds() / 60
+              # ise_satoshi: posts every 45 min, so 2.5h without post = stopped
+              threshold = 150
+              print(f"Last post: {int(elapsed_min)} min ago (threshold: {threshold} min)")
+              do_trigger = elapsed_min > threshold
+
+          if do_trigger:
+              print("Posting stopped! Triggering main workflow...")
+              r = subprocess.run(['gh', 'workflow', 'run', 'post.yml'], capture_output=True, text=True)
+              if r.returncode == 0:
+                  print("Triggered successfully.")
+              else:
+                  print("Trigger error:", r.stderr)
+                  sys.exit(1)
+          else:
+              print("Posting is running normally. No action needed.")
+          PYEOF
