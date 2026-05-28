@@ -1,6 +1,6 @@
 {
-  "max_posts_per_day": 20,
-  "min_post_interval_minutes": 40,
+  "max_posts_per_day": 5,
+  "min_post_interval_minutes": 150,
   "max_error_count": 3,
   "posting_hours_start": 7,
   "posting_hours_end": 22

@@ -3,9 +3,10 @@ name: Threads Auto Post - ise_satoshi
 on:
   schedule:
     - cron: '0 22 * * *'   # JST 7:00
-    - cron: '30 1 * * *'   # JST 10:30
-    - cron: '0 5 * * *'    # JST 14:00
-    - cron: '30 8 * * *'   # JST 17:30
+    - cron: '0 1 * * *'    # JST 10:00
+    - cron: '0 4 * * *'    # JST 13:00
+    - cron: '0 7 * * *'    # JST 16:00
+    - cron: '0 10 * * *'   # JST 19:00
   workflow_dispatch:
 
 concurrency:
@@ -28,32 +29,24 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Post loop (up to 4 times, 42min apart)
+      - name: Refill queue if low
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python agents/writer.py
+
+      - name: Post to Threads
         env:
           THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
           THREADS_USER_ID: ${{ secrets.THREADS_USER_ID }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python agents/poster.py
+
+      - name: Save updated queue and history
         run: |
           git config user.email "bot@threads-bot"
           git config user.name "ThreadsBot"
-
-          for i in 1 2 3 4; do
-            echo "=== attempt $i/4 ==="
-
-            python agents/writer.py
-
-            python agents/poster.py
-
-            git pull --rebase origin main || true
-            git add data/
-            git diff --staged --quiet || git commit -m "Update queue and history"
-            git push origin main || true
-
-            if [ $i -lt 4 ]; then
-              echo "Sleeping 42 min..."
-              sleep 2520
-            fi
-          done
+          git add data/
+          git diff --staged --quiet || git commit -m "Update queue and history"
+          git push
 
       - name: Re-enable schedule
         if: always()

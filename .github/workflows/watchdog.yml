@@ -2,10 +2,9 @@ name: Watchdog - Auto Recovery
 
 on:
   schedule:
-    - cron: '30 1 * * *'   # JST 10:30
-    - cron: '30 4 * * *'   # JST 13:30
-    - cron: '30 7 * * *'   # JST 16:30
-    - cron: '30 10 * * *'  # JST 19:30
+    - cron: '30 0 * * *'   # JST 9:30
+    - cron: '30 6 * * *'   # JST 15:30
+    - cron: '30 11 * * *'  # JST 20:30
   workflow_dispatch:
 
 jobs:
@@ -47,8 +46,8 @@ jobs:
               if last_time.tzinfo is None:
                   last_time = last_time.replace(tzinfo=timezone.utc)
               elapsed_min = (now_utc - last_time).total_seconds() / 60
-              # ise_satoshi: posts every 45 min, so 2.5h without post = stopped
-              threshold = 150
+              # 5時間（300分）以上投稿なし = 止まっている
+              threshold = 300
               print(f"Last post: {int(elapsed_min)} min ago (threshold: {threshold} min)")
               do_trigger = elapsed_min > threshold
 
