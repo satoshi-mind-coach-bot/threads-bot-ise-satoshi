@@ -1,0 +1,72 @@
+name: Auto Token Refresh
+
+on:
+  schedule:
+    - cron: '0 1 1 * *'  # 毎月1日 JST 10:00
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: none
+    steps:
+      - name: Install dependencies
+        run: pip install PyNaCl -q
+
+      - name: Refresh Threads token and update secret
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+          THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
+          REPO: satoshi-mind-coach-bot/threads-bot-ise-satoshi
+        run: |
+          python3 << 'PYEOF'
+          import urllib.request, json, os
+          from base64 import b64encode
+          from nacl import encoding, public as nacl_public
+
+          token = os.environ['THREADS_ACCESS_TOKEN']
+          gh_pat = os.environ['GH_PAT']
+          repo = os.environ['REPO']
+
+          # Threads トークン更新
+          url = f"https://graph.threads.net/refresh_access_token?grant_type=th_refresh_token&access_token={token}"
+          try:
+              with urllib.request.urlopen(url) as res:
+                  data = json.loads(res.read().decode())
+              new_token = data['access_token']
+              expires_in = data.get('expires_in', 0)
+              print(f"Token refreshed. Expires in {expires_in // 86400} days.")
+          except Exception as e:
+              print(f"Token refresh failed: {e}")
+              exit(1)
+
+          # GitHub の public key 取得
+          req = urllib.request.Request(
+              f"https://api.github.com/repos/{repo}/actions/secrets/public-key",
+              headers={"Authorization": f"token {gh_pat}", "Accept": "application/vnd.github+json"}
+          )
+          with urllib.request.urlopen(req) as res:
+              pk_data = json.loads(res.read().decode())
+
+          # 新トークンを暗号化
+          pk = nacl_public.PublicKey(pk_data['key'].encode(), encoding.Base64Encoder)
+          box = nacl_public.SealedBox(pk)
+          encrypted = b64encode(box.encrypt(new_token.encode())).decode()
+
+          # GitHub Secret を更新
+          payload = json.dumps({"encrypted_value": encrypted, "key_id": pk_data['key_id']}).encode()
+          req = urllib.request.Request(
+              f"https://api.github.com/repos/{repo}/actions/secrets/THREADS_ACCESS_TOKEN",
+              data=payload,
+              method="PUT",
+              headers={
+                  "Authorization": f"token {gh_pat}",
+                  "Accept": "application/vnd.github+json",
+                  "Content-Type": "application/json"
+              }
+          )
+          with urllib.request.urlopen(req) as res:
+              print(f"Secret updated. Status: {res.status}")
+          print("Done!")
+          PYEOF
