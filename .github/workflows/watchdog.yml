@@ -16,6 +16,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Re-enable main workflow if disabled
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow enable post.yml || true
+
       - name: Check last post and trigger if stopped
         env:
           GH_TOKEN: ${{ github.token }}
@@ -46,8 +51,7 @@ jobs:
               if last_time.tzinfo is None:
                   last_time = last_time.replace(tzinfo=timezone.utc)
               elapsed_min = (now_utc - last_time).total_seconds() / 60
-              # 5時間（300分）以上投稿なし = 止まっている
-              threshold = 300
+              threshold = 300  # 5時間以上投稿なし = 止まっている
               print(f"Last post: {int(elapsed_min)} min ago (threshold: {threshold} min)")
               do_trigger = elapsed_min > threshold
 
